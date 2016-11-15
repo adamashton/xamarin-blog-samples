@@ -13,90 +13,102 @@ namespace Camera
 
 		AVCaptureSession captureSession;
 		AVCaptureDeviceInput captureDeviceInput;
-		AVCaptureStillImageOutput stillImageOutput;
+		AVCaptureOutput stillImageOutput;
 		AVCaptureVideoPreviewLayer videoPreviewLayer;
 
-		public ViewController (IntPtr handle) : base (handle)
+		public ViewController(IntPtr handle) : base(handle)
 		{
 		}
 
-		public override async void ViewDidLoad ()
+		public override async void ViewDidLoad()
 		{
-			base.ViewDidLoad ();
+			base.ViewDidLoad();
 
-			await AuthorizeCameraUse ();
-			SetupLiveCameraStream ();
+			await AuthorizeCameraUse();
+			SetupLiveCameraStream();
 		}
 
-		public override void DidReceiveMemoryWarning ()
+		public override void DidReceiveMemoryWarning()
 		{
-			base.DidReceiveMemoryWarning ();
+			base.DidReceiveMemoryWarning();
 		}
 
-		async partial void TakePhotoButtonTapped (UIButton sender)
-		{
-
-		}
-
-		partial void SwitchCameraButtonTapped (UIButton sender)
+		async partial void TakePhotoButtonTapped(UIButton sender)
 		{
 
 		}
 
-		partial void FlashButtonTapped (UIButton sender)
+		partial void SwitchCameraButtonTapped(UIButton sender)
 		{
 
 		}
 
-		async Task AuthorizeCameraUse ()
+		partial void FlashButtonTapped(UIButton sender)
 		{
-			var authorizationStatus = AVCaptureDevice.GetAuthorizationStatus (AVMediaType.Video);
 
-			if (authorizationStatus != AVAuthorizationStatus.Authorized) {
-				await AVCaptureDevice.RequestAccessForMediaTypeAsync (AVMediaType.Video);
+		}
+
+		async Task AuthorizeCameraUse()
+		{
+			var authorizationStatus = AVCaptureDevice.GetAuthorizationStatus(AVMediaType.Video);
+
+			if (authorizationStatus != AVAuthorizationStatus.Authorized)
+			{
+				await AVCaptureDevice.RequestAccessForMediaTypeAsync(AVMediaType.Video);
 			}
 		}
 
-		public void SetupLiveCameraStream ()
+		public void SetupLiveCameraStream()
 		{
-			captureSession = new AVCaptureSession ();
+			captureSession = new AVCaptureSession();
 
 			var viewLayer = liveCameraStream.Layer;
-			videoPreviewLayer = new AVCaptureVideoPreviewLayer (captureSession) {
+			videoPreviewLayer = new AVCaptureVideoPreviewLayer(captureSession)
+			{
 				Frame = this.View.Frame
 			};
-			liveCameraStream.Layer.AddSublayer (videoPreviewLayer);
+			liveCameraStream.Layer.AddSublayer(videoPreviewLayer);
 
-			var captureDevice = AVCaptureDevice.DefaultDeviceWithMediaType (AVMediaType.Video);
-			ConfigureCameraForDevice (captureDevice);
-			captureDeviceInput = AVCaptureDeviceInput.FromDevice (captureDevice);
-			captureSession.AddInput (captureDeviceInput);
+			var captureDevice = AVCaptureDevice.DefaultDeviceWithMediaType(AVMediaType.Video);
+			ConfigureCameraForDevice(captureDevice);
+			captureDeviceInput = AVCaptureDeviceInput.FromDevice(captureDevice);
+			captureSession.AddInput(captureDeviceInput);
 
 			var dictionary = new NSMutableDictionary();
-			dictionary[AVVideo.CodecKey] = new NSNumber((int) AVVideoCodec.JPEG);
-			stillImageOutput = new AVCaptureStillImageOutput () {
-				OutputSettings = new NSDictionary ()
-			};
+			dictionary[AVVideo.CodecKey] = new NSNumber((int)AVVideoCodec.JPEG);
 
-			captureSession.AddOutput (stillImageOutput);
-			captureSession.StartRunning ();
+			if (UIDevice.CurrentDevice.CheckSystemVersion(10, 0))
+				stillImageOutput = new AVCapturePhotoOutput();
+			else
+				stillImageOutput = new AVCaptureStillImageOutput
+				{
+					OutputSettings = new NSDictionary()
+				};
+
+			captureSession.AddOutput(stillImageOutput);
+			captureSession.StartRunning();
 		}
 
-		void ConfigureCameraForDevice (AVCaptureDevice device)
+		void ConfigureCameraForDevice(AVCaptureDevice device)
 		{
-			var error = new NSError ();
-			if (device.IsFocusModeSupported (AVCaptureFocusMode.ContinuousAutoFocus)) {
-				device.LockForConfiguration (out error);
+			var error = new NSError();
+			if (device.IsFocusModeSupported(AVCaptureFocusMode.ContinuousAutoFocus))
+			{
+				device.LockForConfiguration(out error);
 				device.FocusMode = AVCaptureFocusMode.ContinuousAutoFocus;
-				device.UnlockForConfiguration ();
-			} else if (device.IsExposureModeSupported (AVCaptureExposureMode.ContinuousAutoExposure)) {
-				device.LockForConfiguration (out error);
+				device.UnlockForConfiguration();
+			}
+			else if (device.IsExposureModeSupported(AVCaptureExposureMode.ContinuousAutoExposure))
+			{
+				device.LockForConfiguration(out error);
 				device.ExposureMode = AVCaptureExposureMode.ContinuousAutoExposure;
-				device.UnlockForConfiguration ();
-			} else if (device.IsWhiteBalanceModeSupported (AVCaptureWhiteBalanceMode.ContinuousAutoWhiteBalance)) {
-				device.LockForConfiguration (out error);
+				device.UnlockForConfiguration();
+			}
+			else if (device.IsWhiteBalanceModeSupported(AVCaptureWhiteBalanceMode.ContinuousAutoWhiteBalance))
+			{
+				device.LockForConfiguration(out error);
 				device.WhiteBalanceMode = AVCaptureWhiteBalanceMode.ContinuousAutoWhiteBalance;
-				device.UnlockForConfiguration ();
+				device.UnlockForConfiguration();
 			}
 		}
 	}
